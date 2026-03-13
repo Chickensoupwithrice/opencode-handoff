@@ -8,7 +8,8 @@ Inspired by Amp's handoff command - see their [post](https://ampcode.com/news/ha
 
 - `/handoff <goal>` command that analyzes the conversation and generates a continuation prompt
 - Guides the AI to include relevant `@file` references so the next session starts with context loaded
-- Opens a new session with the prompt as an editable draft
+- Creates a new session and sends the handoff prompt, immediately starting work
+- Works with both the TUI and web frontends
 - `read_session` tool for retrieving full conversation transcripts from previous sessions when the handoff summary isn't sufficient
 
 ## Requirements
@@ -41,8 +42,7 @@ OpenCode fetches unpinned plugins from npm on each startup; pinned versions are 
 
 1. Have a conversation in OpenCode with some context
 2. When ready to continue in a fresh session, type `/handoff <your goal>`
-3. A new session opens with the handoff prompt as an editable draft
-4. Review and edit the draft if needed, then send
+3. A new session is created with the handoff prompt and the AI begins working immediately
 
 **Example:**
 
@@ -50,7 +50,7 @@ OpenCode fetches unpinned plugins from npm on each startup; pinned versions are 
 /handoff implement the user authentication feature we discussed
 ```
 
-The AI analyzes the conversation, extracts key decisions and relevant files, generates a focused prompt, and creates a new session with that prompt ready to edit.
+The AI analyzes the conversation, extracts key decisions and relevant files, generates a focused prompt, and creates a new session that starts working immediately.
 
 ### Reading Previous Session Transcripts
 

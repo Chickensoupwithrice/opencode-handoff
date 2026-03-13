@@ -14,11 +14,12 @@ export type OpencodeClient = PluginInput["client"]
 /**
  * Create the handoff_session tool.
  *
- * Takes the OpenCode client as a dependency for TUI and session operations.
+ * Takes the OpenCode client as a dependency for session operations.
+ * Uses server-side session APIs so the tool works with both the TUI and web frontends.
  */
 export const HandoffSession = (client: OpencodeClient) => {
   return tool({
-    description: "Create a new session with the handoff prompt as an editable draft",
+    description: "Create a new session with the handoff prompt and start working on it",
     args: {
       prompt: tool.schema.string().describe("The generated handoff prompt"),
       files: tool.schema.array(tool.schema.string()).optional().describe("Array of file paths to load into the new session's context"),
@@ -32,24 +33,33 @@ export const HandoffSession = (client: OpencodeClient) => {
         ? `${sessionReference}\n\n${fileRefs}\n\n${args.prompt}`
         : `${sessionReference}\n\n${args.prompt}`
 
-      await client.tui.executeCommand({ body: { command: "session_new" } })
-      // session_new is fire-and-forget (publishes a bus event, returns immediately).
-      // The TUI needs time to navigate to the home screen and mount the new prompt
-      // input before appendPrompt can insert text — otherwise the event is silently
-      // dropped because the input component doesn't exist yet.
-      await new Promise(r => setTimeout(r, 150))
-      await client.tui.appendPrompt({ body: { text: fullPrompt } })
+      // Create a new session via the server API (works with all frontends)
+      const session = await client.session.create({ body: {} })
+      const sessionID = session.data!.id
 
-      await client.tui.showToast({
+      // Send the handoff prompt and trigger AI response
+      await client.session.prompt({
+        path: { id: sessionID },
         body: {
-          title: "Handoff Ready",
-          message: "Review and edit the draft, then send",
-          variant: "success",
-          duration: 4000,
-        }
+          parts: [{ type: "text", text: fullPrompt }],
+        },
       })
 
-      return "Handoff prompt created in new session. Review and edit before sending."
+      // Best-effort: show a toast notification if a frontend supports it
+      try {
+        await client.tui.showToast({
+          body: {
+            title: "Handoff Ready",
+            message: "New session created with handoff prompt",
+            variant: "success",
+            duration: 4000,
+          }
+        })
+      } catch {
+        // Silently ignore — toast is a nice-to-have, not critical
+      }
+
+      return `Handoff session created (${sessionID}). The prompt has been sent to the new session.`
     }
   })
 }
