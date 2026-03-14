@@ -14,10 +14,10 @@ export type OpencodeClient = PluginInput["client"]
 /**
  * Create the handoff_session tool.
  *
- * Takes the OpenCode client as a dependency for session operations.
+ * Takes the OpenCode client and server context as dependencies for session operations.
  * Uses server-side session APIs so the tool works with both the TUI and web frontends.
  */
-export const HandoffSession = (client: OpencodeClient) => {
+export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory: string) => {
   return tool({
     description: "Create a new session with the handoff prompt and start working on it",
     args: {
@@ -59,7 +59,11 @@ export const HandoffSession = (client: OpencodeClient) => {
         // Silently ignore — toast is a nice-to-have, not critical
       }
 
-      return `Handoff session created (${sessionID}). The prompt has been sent to the new session.`
+      // Build a direct link to the new session in the web UI
+      const dirSlug = btoa(directory)
+      const sessionUrl = new URL(`/${dirSlug}/session/${sessionID}`, serverUrl).toString()
+
+      return `Handoff session created: [${sessionID}](${sessionUrl})`
     }
   })
 }
