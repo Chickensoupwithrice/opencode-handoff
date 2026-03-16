@@ -39,7 +39,9 @@ USER: $ARGUMENTS
 ---
 
 After generating the handoff message, IMMEDIATELY call handoff_session with your prompt and files:
-\`handoff_session(prompt="...", files=["src/foo.ts", "src/bar.ts", ...])\``
+\`handoff_session(prompt="...", files=["src/foo.ts", "src/bar.ts", ...])\`
+
+After the tool succeeds, include the session URL from the tool result as a clickable markdown link in your response so the user can navigate to the new session.`
 
 export const HandoffPlugin: Plugin = async (ctx) => {
   const processedSessions = new Set<string>()

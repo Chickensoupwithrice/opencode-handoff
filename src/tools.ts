@@ -12,9 +12,18 @@ import { tool } from "@opencode-ai/plugin"
 export type OpencodeClient = PluginInput["client"]
 
 /**
+ * URL-safe base64 encoding matching OpenCode's web app format.
+ * Replaces + with -, / with _, and strips = padding.
+ */
+function base64UrlEncode(value: string): string {
+  const bytes = new TextEncoder().encode(value)
+  const binary = Array.from(bytes, (b) => String.fromCharCode(b)).join("")
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+}
+
+/**
  * Create the handoff_session tool.
  *
- * Takes the OpenCode client and server context as dependencies for session operations.
  * Uses server-side session APIs so the tool works with both the TUI and web frontends.
  */
 export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory: string) => {
@@ -33,37 +42,38 @@ export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory
         ? `${sessionReference}\n\n${fileRefs}\n\n${args.prompt}`
         : `${sessionReference}\n\n${args.prompt}`
 
-      // Create a new session via the server API (works with all frontends)
       const session = await client.session.create({ body: {} })
-      const sessionID = session.data!.id
+      if (!session.data) {
+        return "Failed to create handoff session."
+      }
+      const sessionID = session.data.id
 
-      // Send the handoff prompt and trigger AI response
-      await client.session.prompt({
-        path: { id: sessionID },
-        body: {
-          parts: [{ type: "text", text: fullPrompt }],
-        },
-      })
-
-      // Best-effort: show a toast notification if a frontend supports it
       try {
-        await client.tui.showToast({
+        await client.session.promptAsync({
+          path: { id: sessionID },
           body: {
-            title: "Handoff Ready",
-            message: "New session created with handoff prompt",
-            variant: "success",
-            duration: 4000,
-          }
+            parts: [{ type: "text", text: fullPrompt }],
+          },
         })
       } catch {
-        // Silently ignore — toast is a nice-to-have, not critical
+        await client.session.delete({ path: { id: sessionID } }).catch(() => {})
+        return "Failed to send handoff prompt to new session."
       }
 
-      // Build a direct link to the new session in the web UI
-      const dirSlug = btoa(directory)
+      // Fire-and-forget toast for TUI users
+      client.tui.showToast({
+        body: {
+          title: "Handoff Ready",
+          message: "New session created with handoff prompt",
+          variant: "success",
+          duration: 4000,
+        }
+      }).catch(() => {})
+
+      const dirSlug = base64UrlEncode(directory)
       const sessionUrl = new URL(`/${dirSlug}/session/${sessionID}`, serverUrl).toString()
 
-      return `Handoff session created: [${sessionID}](${sessionUrl})`
+      return `Handoff session created (${sessionID}). Session URL: ${sessionUrl}\n\nIMPORTANT: In your response to the user, include this clickable markdown link so they can navigate to the new session: [Open handoff session](${sessionUrl})`
     }
   })
 }
