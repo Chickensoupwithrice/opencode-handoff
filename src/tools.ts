@@ -60,6 +60,12 @@ export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory
         return "Failed to send handoff prompt to new session."
       }
 
+      // Set metadata so the UI can render a clickable link to the session
+      context.metadata({
+        title: "Handoff session created",
+        metadata: { sessionId: sessionID },
+      })
+
       // Fire-and-forget toast for TUI users
       client.tui.showToast({
         body: {
