@@ -15,10 +15,11 @@
     "agent",
     "ai"
   ],
-  "main": "src/plugin.ts",
-  "files": ["src", "README.md"],
+  "main": "dist/plugin.js",
+  "files": ["src", "dist", "README.md"],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/plugin.ts --outdir dist --target bun --format esm"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.2.15",
