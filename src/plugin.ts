@@ -56,7 +56,7 @@ export const HandoffPlugin: Plugin = async (ctx) => {
     },
 
     tool: {
-      handoff_session: HandoffSession(ctx.client, ctx.serverUrl, ctx.directory),
+      handoff_session: HandoffSession(ctx.client, ctx.directory),
       read_session: ReadSession(ctx.client),
     },
 

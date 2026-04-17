@@ -12336,7 +12336,7 @@ function base64UrlEncode(value) {
   const binary = Array.from(bytes, (b) => String.fromCharCode(b)).join("");
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
-var HandoffSession = (client, serverUrl, directory) => {
+var HandoffSession = (client, directory) => {
   return tool({
     description: "Create a new session with the handoff prompt and start working on it",
     args: {
@@ -12382,10 +12382,10 @@ ${args.prompt}`;
         }
       }).catch(() => {});
       const dirSlug = base64UrlEncode(directory);
-      const sessionUrl = new URL(`/${dirSlug}/session/${sessionID}`, serverUrl).toString();
-      return `Handoff session created (${sessionID}). Session URL: ${sessionUrl}
+      const sessionPath = `/${dirSlug}/session/${sessionID}`;
+      return `Handoff session created (${sessionID}). Session URL: ${sessionPath}
 
-IMPORTANT: In your response to the user, include this clickable markdown link so they can navigate to the new session: [Open handoff session](${sessionUrl})`;
+IMPORTANT: In your response to the user, include this clickable markdown link so they can navigate to the new session: [Open handoff session](${sessionPath})`;
     }
   });
 };
@@ -12643,7 +12643,7 @@ var HandoffPlugin = async (ctx) => {
       };
     },
     tool: {
-      handoff_session: HandoffSession(ctx.client, ctx.serverUrl, ctx.directory),
+      handoff_session: HandoffSession(ctx.client, ctx.directory),
       read_session: ReadSession(ctx.client)
     },
     "chat.message": async (_input, output) => {

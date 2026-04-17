@@ -26,7 +26,7 @@ function base64UrlEncode(value: string): string {
  *
  * Uses server-side session APIs so the tool works with both the TUI and web frontends.
  */
-export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory: string) => {
+export const HandoffSession = (client: OpencodeClient, directory: string) => {
   return tool({
     description: "Create a new session with the handoff prompt and start working on it",
     args: {
@@ -77,9 +77,9 @@ export const HandoffSession = (client: OpencodeClient, serverUrl: URL, directory
       }).catch(() => {})
 
       const dirSlug = base64UrlEncode(directory)
-      const sessionUrl = new URL(`/${dirSlug}/session/${sessionID}`, serverUrl).toString()
+      const sessionPath = `/${dirSlug}/session/${sessionID}`
 
-      return `Handoff session created (${sessionID}). Session URL: ${sessionUrl}\n\nIMPORTANT: In your response to the user, include this clickable markdown link so they can navigate to the new session: [Open handoff session](${sessionUrl})`
+      return `Handoff session created (${sessionID}). Session URL: ${sessionPath}\n\nIMPORTANT: In your response to the user, include this clickable markdown link so they can navigate to the new session: [Open handoff session](${sessionPath})`
     }
   })
 }
