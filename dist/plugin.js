@@ -12353,6 +12353,19 @@ ${fileRefs}
 ${args.prompt}` : `${sessionReference}
 
 ${args.prompt}`;
+      let inherited = {};
+      try {
+        const messages = await client.session.messages({
+          path: { id: context.sessionID }
+        });
+        const assistant = messages.data?.map((m) => m.info).reverse().find((info) => info.role === "assistant" && info.agent && info.modelID && info.providerID);
+        if (assistant) {
+          inherited = {
+            agent: assistant.agent,
+            model: { providerID: assistant.providerID, modelID: assistant.modelID }
+          };
+        }
+      } catch {}
       const session = await client.session.create({ body: {} });
       if (!session.data) {
         return "Failed to create handoff session.";
@@ -12362,6 +12375,7 @@ ${args.prompt}`;
         await client.session.promptAsync({
           path: { id: sessionID },
           body: {
+            ...inherited,
             parts: [{ type: "text", text: fullPrompt }]
           }
         });

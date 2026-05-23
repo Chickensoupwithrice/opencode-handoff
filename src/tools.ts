@@ -42,6 +42,28 @@ export const HandoffSession = (client: OpencodeClient, directory: string) => {
         ? `${sessionReference}\n\n${fileRefs}\n\n${args.prompt}`
         : `${sessionReference}\n\n${args.prompt}`
 
+      // Preserve the source session's agent and model in the handoff so the
+      // new session continues with the same mode (e.g. smart/deep) instead of
+      // falling back to OpenCode's global default.
+      let inherited: { agent?: string; model?: { providerID: string; modelID: string } } = {}
+      try {
+        const messages = await client.session.messages({
+          path: { id: context.sessionID },
+        })
+        const assistant = messages.data
+          ?.map((m) => m.info)
+          .reverse()
+          .find((info: any) => info.role === "assistant" && info.agent && info.modelID && info.providerID) as any
+        if (assistant) {
+          inherited = {
+            agent: assistant.agent,
+            model: { providerID: assistant.providerID, modelID: assistant.modelID },
+          }
+        }
+      } catch {
+        // Non-fatal: fall back to global defaults if the lookup fails.
+      }
+
       const session = await client.session.create({ body: {} })
       if (!session.data) {
         return "Failed to create handoff session."
@@ -52,6 +74,7 @@ export const HandoffSession = (client: OpencodeClient, directory: string) => {
         await client.session.promptAsync({
           path: { id: sessionID },
           body: {
+            ...inherited,
             parts: [{ type: "text", text: fullPrompt }],
           },
         })
